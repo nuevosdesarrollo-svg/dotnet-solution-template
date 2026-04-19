@@ -1,0 +1,53 @@
+name: Protect prompts from manual changes
+
+on:
+  pull_request:
+    paths:
+      - "prompts/**"
+
+permissions:
+  contents: read
+
+env:
+  SOURCE_REPOSITORY: "nuevosdesarrollo-svg/dotnet-prompts"
+  SOURCE_REF: "integracion"
+  TARGET_PROMPTS_PATH: "prompts"
+
+jobs:
+  validate-prompts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout target repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Download source prompts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/source-prompts
+          git clone --depth 1 --filter=blob:none --sparse "https://github.com/${SOURCE_REPOSITORY}.git" /tmp/source-prompts/repo
+          git -C /tmp/source-prompts/repo sparse-checkout set prompts
+          git -C /tmp/source-prompts/repo checkout "${SOURCE_REF}"
+
+      - name: Compare prompt trees
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_path="/tmp/source-prompts/repo/prompts"
+          target_path="${GITHUB_WORKSPACE}/${TARGET_PROMPTS_PATH%/}"
+
+          if [ ! -d "${target_path}" ]; then
+            echo "La ruta destino de prompts no existe: ${target_path}"
+            exit 1
+          fi
+
+          if ! diff -qr "${source_path}" "${target_path}" > /tmp/prompts-diff.txt; then
+            echo "Los prompts no coinciden con la fuente oficial ${SOURCE_REPOSITORY}@${SOURCE_REF}."
+            echo "Sincroniza desde el repositorio oficial y vuelve a intentar."
+            cat /tmp/prompts-diff.txt
+            exit 1
+          fi
+
+          echo "Validación de prompts exitosa."
