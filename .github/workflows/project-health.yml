@@ -1,0 +1,66 @@
+name: Project health
+
+on:
+  pull_request:
+    branches:
+      - integracion
+      - main
+  push:
+    branches:
+      - integracion
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: "8.x"
+  SOLUTION_SEARCH_MAX_DEPTH: "3"
+
+jobs:
+  build-test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t solutions < <(find . -maxdepth "${SOLUTION_SEARCH_MAX_DEPTH}" -name "*.sln" -type f | sort)
+          if [ "${#solutions[@]}" -eq 0 ]; then
+            echo "No se encontró ningún .sln; se usará restauración por proyecto."
+            dotnet restore
+            exit 0
+          fi
+          for sln in "${solutions[@]}"; do
+            echo "Restaurando ${sln}"
+            dotnet restore "${sln}"
+          done
+
+      - name: Build
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet build --configuration Release --no-restore
+
+      - name: Test
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t tests < <(find . -type f -name "*Tests.csproj" | sort)
+          if [ "${#tests[@]}" -eq 0 ]; then
+            echo "No se encontraron proyectos de test; se omite dotnet test."
+            exit 0
+          fi
+          for test_project in "${tests[@]}"; do
+            echo "Probando ${test_project}"
+            dotnet test "${test_project}" --configuration Release --no-build --logger "trx;LogFileName=test-results.trx"
+          done
