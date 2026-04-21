@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- Propiedad base compartida para futuros proyectos de la solución -->
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+</Project>
