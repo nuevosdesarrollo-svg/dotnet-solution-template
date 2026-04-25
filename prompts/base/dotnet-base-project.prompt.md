@@ -104,7 +104,7 @@ TESTS BASE:
 - Fallar build ante violaciones.
 
 EXTRAS:
-- README.md
+- README.md con instrucciones de arranque y con la sección `## Contexto de Arquitectura` que registra la arquitectura seleccionada y los inicializadores configurados (esta sección es completada y mantenida por el prompt `project-capabilities`).
 - Dockerfile mínimo
 - GitHub Actions (build + test)
 - .editorconfig con reglas de estilo básicas (indentación, charset, fin de línea)
@@ -151,4 +151,4 @@ DEFINITION OF DONE:
 - dotnet build → sin errores ni warnings que rompan el build.
 - dotnet test → todos los tests de arquitectura pasan.
 - Al menos un inicializador compila y arranca localmente sin dependencias externas obligatorias.
-- README.md generado con instrucciones de arranque.
+- README.md generado con instrucciones de arranque y con la sección `## Contexto de Arquitectura` que indica la arquitectura y los inicializadores seleccionados.

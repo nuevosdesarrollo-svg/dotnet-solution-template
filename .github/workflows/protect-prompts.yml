@@ -11,6 +11,7 @@ permissions:
 env:
   SOURCE_REPOSITORY: "nuevosdesarrollo-svg/dotnet-prompts"
   SOURCE_REF: "integracion"
+  SOURCE_AREA: "dotnet"
   TARGET_PROMPTS_PATH: "prompts"
   PROMPTS_SOURCE_TOKEN: ${{ secrets.PROMPTS_SOURCE_TOKEN }}
 
@@ -32,14 +33,14 @@ jobs:
             git config --global url."https://x-access-token:${PROMPTS_SOURCE_TOKEN}@github.com/".insteadOf "https://github.com/"
           fi
           git clone --depth 1 --filter=blob:none --sparse "https://github.com/${SOURCE_REPOSITORY}.git" /tmp/source-prompts/repo
-          git -C /tmp/source-prompts/repo sparse-checkout set prompts
+          git -C /tmp/source-prompts/repo sparse-checkout set "prompts/${SOURCE_AREA}"
           git -C /tmp/source-prompts/repo checkout "${SOURCE_REF}"
 
       - name: Compare prompt trees
         shell: bash
         run: |
           set -euo pipefail
-          source_path="/tmp/source-prompts/repo/prompts"
+          source_path="/tmp/source-prompts/repo/prompts/${SOURCE_AREA}"
           target_path="${GITHUB_WORKSPACE}/${TARGET_PROMPTS_PATH%/}"
 
           if [ ! -d "${target_path}" ]; then

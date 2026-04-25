@@ -25,6 +25,10 @@ RESTRICCIONES:
 - No CQRS automático.
 - No lógica de negocio en repositorios.
 
+NOTA:
+- Este prompt cubre el setup inicial de persistencia (DbContext, repositorios, DI).
+- Para el análisis de patrones de persistencia durante el desarrollo de funcionalidades (Unit of Work, idempotencia, paginación, proyecciones), referirse a la sección PERSISTENCIA del prompt `dotnet-development-assistant`.
+
 DEFINITION OF DONE:
 - dotnet restore → sin errores.
 - dotnet build → sin errores.

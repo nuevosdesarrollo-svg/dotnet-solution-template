@@ -18,9 +18,8 @@ VALIDACIONES DE SEGURIDAD:
 - No exponer mensajes sensibles.
 
 BASE DE TESTS:
-- Crear tests básicos por validador.
-- Casos válidos e inválidos.
-- Sin mocks complejos.
+- Si el proyecto usa el prompt `dotnet-development-assistant`, los tests de validadores se generan automáticamente al implementar las validaciones; no es necesario crearlos de nuevo.
+- Si se usa este prompt de forma independiente, crear tests básicos por validador con casos válidos e inválidos, sin mocks complejos.
 
 RESTRICCIONES:
 - No lógica de negocio compleja.
