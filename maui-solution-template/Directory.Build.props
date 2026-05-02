@@ -3,6 +3,7 @@
     <!-- Propiedad base compartida para futuros proyectos de la solución -->
     <Nullable>enable</Nullable>
     <!-- Plataformas objetivo soportadas por defecto para proyectos MAUI -->
+    <!-- Android API 21 (Android 5.0) es el mínimo recomendado por .NET MAUI 8; ajusta según el perfil de dispositivos del proyecto -->
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">14.2</SupportedOSPlatformVersion>
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">14.0</SupportedOSPlatformVersion>

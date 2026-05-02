@@ -9,7 +9,7 @@ Estructura mínima y gobernada para comenzar de forma ordenada:
 - `maui-solution-template.sln` (solución vacía)
 - `src/` y `tests/` para código y pruebas
 - `.gitignore` optimizado para .NET y MAUI
-- `global.json` para fijar SDK recomendado (8.x)
+- `global.json` fijando el SDK `8.0.100` con `rollForward: latestFeature`
 - `Directory.Build.props` con propiedades base incluyendo versiones mínimas de OS para cada plataforma MAUI
 
 > Este repositorio **no** incluye carpeta `prompts/` ni workflows locales por defecto.
