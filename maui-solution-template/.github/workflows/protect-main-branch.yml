@@ -1,0 +1,118 @@
+name: Protect branch flow
+
+# Valida reglas de PR entre ramas:
+# - PR a main: solo desde integracion o hotfix/*
+# - PR a integracion: desde feature/*, fix/*, chore/*, refactor/* u hotfix/*
+# Además, para PRs integracion -> main exige que el último "Project health"
+# en integracion esté en estado success.
+#
+# Cómo usar en repos consumidores:
+# 1. Copiar este archivo a .github/workflows/protect-main-branch.yml del repo destino.
+# 2. Asegurar que exista .github/workflows/project-health.yml.
+
+on:
+  pull_request:
+    branches:
+      - main
+      - integracion
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+
+jobs:
+  validate-branch-flow:
+    name: Validate PR branch flow
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check source and target branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_branch="${GITHUB_HEAD_REF}"
+          target_branch="${GITHUB_BASE_REF}"
+          echo "Rama origen del PR: ${source_branch}"
+          echo "Rama destino del PR: ${target_branch}"
+
+          if [[ "${target_branch}" == "main" ]]; then
+            if [[ "${source_branch}" == "integracion" || "${source_branch}" == hotfix/* ]]; then
+              echo "Flujo válido para main."
+              exit 0
+            fi
+
+            echo "---"
+            echo "ERROR: Solo se permiten PRs a main desde 'integracion' o 'hotfix/*'."
+            echo "Rama detectada: ${source_branch}"
+            exit 1
+          fi
+
+          if [[ "${target_branch}" == "integracion" ]]; then
+            if [[ "${source_branch}" == feature/* || "${source_branch}" == fix/* || "${source_branch}" == chore/* || "${source_branch}" == refactor/* || "${source_branch}" == hotfix/* ]]; then
+              echo "Flujo válido para integracion."
+              exit 0
+            fi
+
+            echo "---"
+            echo "ERROR: Solo se permiten PRs a integracion desde feature/*, fix/*, chore/*, refactor/* u hotfix/*."
+            echo "Rama detectada: ${source_branch}"
+            exit 1
+          fi
+
+          echo "No hay reglas para la rama destino '${target_branch}'."
+
+  validate-integration-health:
+    name: Validate integration health for main merge
+    runs-on: ubuntu-latest
+    if: github.base_ref == 'main' && github.head_ref == 'integracion'
+    steps:
+      - name: Check latest project health on integracion
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          api_url="https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/project-health.yml/runs?branch=integracion&status=completed&per_page=1"
+          response_file="$(mktemp)"
+          curl -sS \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "${api_url}" > "${response_file}"
+
+          run_info="$(
+            python3 - <<'PY' "${response_file}"
+            import json
+            import sys
+
+            with open(sys.argv[1], "r", encoding="utf-8") as fh:
+                payload = json.load(fh)
+
+            runs = payload.get("workflow_runs", [])
+            if not runs:
+                print("NONE")
+                sys.exit(0)
+
+            latest = runs[0]
+            print(f"{latest.get('status','unknown')}|{latest.get('conclusion','unknown')}|{latest.get('html_url','')}")
+            PY
+          )"
+
+          if [[ "${run_info}" == "NONE" ]]; then
+            echo "ERROR: No existe ejecución completada de project-health.yml en la rama integracion."
+            exit 1
+          fi
+
+          status="$(echo "${run_info}" | cut -d'|' -f1)"
+          conclusion="$(echo "${run_info}" | cut -d'|' -f2)"
+          run_url="$(echo "${run_info}" | cut -d'|' -f3)"
+
+          echo "Último estado: ${status}"
+          echo "Última conclusión: ${conclusion}"
+          echo "Run: ${run_url}"
+
+          if [[ "${conclusion}" != "success" ]]; then
+            echo "ERROR: La salud de integracion no es correcta (conclusion != success); se bloquea el merge a main."
+            exit 1
+          fi
+
+          echo "Salud de integracion OK."
